@@ -1,56 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
-    <title>Anish AI Video Generator</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anish AI Video Generator 🚀</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f0f0; }
-        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; }
-        button { background: #007bff; color: white; font-weight: bold; cursor: pointer; }
-        #video-output { width: 100%; margin-top: 20px; border-radius: 10px; display: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; color: #333; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); width: 90%; max-width: 450px; text-align: center; }
+        h2 { color: #4a4a4a; margin-bottom: 20px; font-size: 24px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #666; }
+        input[type="file"], input[type="text"] { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; transition: 0.3s; }
+        input:focus { border-color: #764ba2; outline: none; }
+        button { width: 100%; padding: 15px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #5a377d; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status { margin-top: 15px; font-size: 14px; color: #555; font-weight: 500; }
+        #video-output { width: 100%; margin-top: 20px; border-radius: 12px; display: none; border: 3px solid #eee; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #764ba2; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: none; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="box">
+    <div class="container">
         <h2>AI Video Generator 🚀</h2>
-        <input type="file" id="imageInput" accept="image/*">
-        <input type="text" id="promptInput" placeholder="Billi ko nachao... (Prompt)">
-        <button onclick="generateVideo()" id="btn">Generate Video (Free)</button>
-        <p id="status"></p>
+        <div class="input-group">
+            <label>Photo Chuno:</label>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        <div class="input-group">
+            <label>Kya harkat karwani hai? (Prompt):</label>
+            <input type="text" id="promptInput" placeholder="Ex: Water flowing, Cinematic motion...">
+        </div>
+        <button onclick="generateVideo()" id="btn">Video Generate Karein</button>
+        <div class="loader" id="loader"></div>
+        <p id="status">Photo upload karke button dabayein...</p>
         <video id="video-output" controls></video>
     </div>
 
     <script type="module">
         import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/+esm";
 
+        // Yahan tera token fit kar diya hai bhai!
+        const HF_TOKEN = "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"; 
+
         window.generateVideo = async () => {
             const file = document.getElementById('imageInput').files[0];
-            const prompt = document.getElementById('promptInput').value;
+            const prompt = document.getElementById('promptInput').value || "Cinematic motion, high quality";
             const status = document.getElementById('status');
             const btn = document.getElementById('btn');
+            const loader = document.getElementById('loader');
+            const videoElement = document.getElementById('video-output');
 
-            if(!file) return alert("Photo to dalo bhai!");
+            if(!file) {
+                alert("Bhai, pehle koi photo toh select karo!");
+                return;
+            }
 
-            status.innerText = "Video ban rahi hai... (30-60 seconds ruko)";
+            status.innerText = "Hugging Face server se connect ho raha hai...";
             btn.disabled = true;
+            loader.style.display = "block";
+            videoElement.style.display = "none";
 
             try {
-                // Ye Hugging Face ke free server (Space) se connect ho raha hai
-                const client = await Client.connect("Wan-AI/Wan2.1-I2V-14B-480P");
+                // Connecting to the AI model using your token
+                const client = await Client.connect("Wan-AI/Wan2.1-I2V-14B-480P", { 
+                    hf_token: HF_TOKEN 
+                });
+
+                status.innerText = "Video ban rahi hai... Ismein 1-2 minute lag sakte hain, ruko mat bhagna!";
+                
                 const result = await client.predict("/predict", { 
                     input_image: file, 
                     prompt: prompt,
                 });
 
-                document.getElementById('video-output').src = result.data[0].url;
-                document.getElementById('video-output').style.display = "block";
-                status.innerText = "Taiyar hai! ✅";
+                if (result.data && result.data[0]) {
+                    videoElement.src = result.data[0].url;
+                    videoElement.style.display = "block";
+                    status.innerText = "Mubarak ho! Video taiyar hai. ✅";
+                } else {
+                    status.innerText = "Video nahi ban payi, shayad server busy hai.";
+                }
+
             } catch (e) {
-                status.innerText = "Error aa gaya! Shayad server busy hai.";
                 console.error(e);
+                status.innerText = "Error: " + e.message + ". 1 minute baad fir se try karein.";
+            } finally {
+                btn.disabled = false;
+                loader.style.display = "none";
             }
-            btn.disabled = false;
         };
     </script>
 </body>
