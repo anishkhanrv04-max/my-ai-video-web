@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anish AI Video Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f0f0; }
+        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; }
+        button { background: #007bff; color: white; font-weight: bold; cursor: pointer; }
+        #video-output { width: 100%; margin-top: 20px; border-radius: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>AI Video Generator 🚀</h2>
+        <input type="file" id="imageInput" accept="image/*">
+        <input type="text" id="promptInput" placeholder="Billi ko nachao... (Prompt)">
+        <button onclick="generateVideo()" id="btn">Generate Video (Free)</button>
+        <p id="status"></p>
+        <video id="video-output" controls></video>
+    </div>
+
+    <script type="module">
+        import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/+esm";
+
+        window.generateVideo = async () => {
+            const file = document.getElementById('imageInput').files[0];
+            const prompt = document.getElementById('promptInput').value;
+            const status = document.getElementById('status');
+            const btn = document.getElementById('btn');
+
+            if(!file) return alert("Photo to dalo bhai!");
+
+            status.innerText = "Video ban rahi hai... (30-60 seconds ruko)";
+            btn.disabled = true;
+
+            try {
+                // Ye Hugging Face ke free server (Space) se connect ho raha hai
+                const client = await Client.connect("Wan-AI/Wan2.1-I2V-14B-480P");
+                const result = await client.predict("/predict", { 
+                    input_image: file, 
+                    prompt: prompt,
+                });
+
+                document.getElementById('video-output').src = result.data[0].url;
+                document.getElementById('video-output').style.display = "block";
+                status.innerText = "Taiyar hai! ✅";
+            } catch (e) {
+                status.innerText = "Error aa gaya! Shayad server busy hai.";
+                console.error(e);
+            }
+            btn.disabled = false;
+        };
+    </script>
+</body>
+</html>
